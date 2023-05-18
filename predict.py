@@ -34,10 +34,24 @@ import tensorflow as tf
 # from wai.ma.transformation import SavitzkyGolay2
 # from wai.ma.filter import Downsample
 from pathlib import Path
+import argparse
 print(f'tensorflow version : {tf.version.VERSION}')
 # tf.enable_eager_execution()
 
 # ClassifierKwargs = ClassifierKwargs()
+args = argparse.ArgumentParser(description='Predictions arguments')
+args.add_argument('--model-path', type=str, required=True, help='Path to the model used')
+args.add_argument('--prediction-path', type=str, required=True, help='Path to save predictions')
+args.add_argument('--chemical', type=str, required=True, help='Chemical to be predicted')
+args.add_argument('--model-version', type=str, help='Version of the predictions model')
+args.add_argument('--spc', type=str, required=True, help='Spectra')
+args = args.parse_args()
+
+model_path = args.model_path
+prediction_path = args.prediction_path
+chemical = args.chemical
+model_version = args.model_version
+spc = args.spc
 
 
 def predict_chems(path_to_model, predction_folder_path, chemicals, model_versions, data):
@@ -94,3 +108,6 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
             preds_comb.to_csv(
                 f'{predction_folder_path}/{model_version}/{chemical}_preds.csv')
         print(f'Finalizing prediction using model version {model_version}')
+
+
+predict_chems(model_path, prediction_path, chemical, model_version, spc)
