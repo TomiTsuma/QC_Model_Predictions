@@ -34,7 +34,7 @@ import tensorflow as tf
 # from wai.ma.transformation import SavitzkyGolay2
 # from wai.ma.filter import Downsample
 from pathlib import Path
-import argparse
+from . import utils
 print(f'tensorflow version : {tf.version.VERSION}')
 # tf.enable_eager_execution()
 
@@ -95,3 +95,7 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
             preds_comb.to_csv(
                 f'{predction_folder_path}/{model_version}/{chemical}_preds.csv')
         print(f'Finalizing prediction using model version {model_version}')
+
+
+# predict_chems('dl_models_all_chems_20210414/dl_v2.2_update_2022',
+#               '../DSML87/outputFiles/preds', ['total_nitrogen', 'clay'], ['DLv2.2'], pd.read_csv('../outputFiles/spectraldata.csv'))

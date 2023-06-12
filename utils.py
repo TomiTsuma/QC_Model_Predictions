@@ -7,24 +7,28 @@ import pickle
 import tensorflow as tf
 import pandas as pd
 
+
 def save_to_disk(ls, fname):
     with open(fname, "wb") as fp:
         pickle.dump(ls, fp)
+
 
 def read_from_disk(fname):
     with open(fname, "rb") as fp:
         ls = pickle.load(fp)
     return ls
 
+
 def pickle_file(preprocess_path, file, name):
-    #create a pickle file
+    # create a pickle file
     picklefile = open(preprocess_path / f'input.nir.{name}', 'wb')
-    #pickle the dictionary and write it to file
+    # pickle the dictionary and write it to file
     pickle.dump(file, picklefile)
-    #close the file
+    # close the file
     picklefile.close()
-    
+
     return
+
 
 def json_save(sg_num_points1, sg_num_points2, model_save_path):
 
@@ -73,11 +77,12 @@ def json_save(sg_num_points1, sg_num_points2, model_save_path):
             }
         ],
     }
-    
+
     with open(model_save_path.parent.parent / 'model.json', 'w') as outfile:
         json.dump(save_dict, outfile)
-        
+
     return
+
 
 class TrainingPlotly(tf.keras.callbacks.Callback):
 
@@ -88,9 +93,9 @@ class TrainingPlotly(tf.keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
         # Initialize the lists for holding the logs, losses and MSEs
         self.losses = []
-        self.mean_squared_error= []
+        self.mean_squared_error = []
         self.val_losses = []
-        self.val_mean_squared_error= []
+        self.val_mean_squared_error = []
         self.logs = []
 
     # This function is called at the end of each epoch
@@ -108,41 +113,46 @@ class TrainingPlotly(tf.keras.callbacks.Callback):
 
             fig = go.Figure()
             fig.add_trace(go.Scatter(y=self.losses,
-                                mode='lines',
-                                name='train_loss'))
+                                     mode='lines',
+                                     name='train_loss'))
             fig.add_trace(go.Scatter(y=self.val_losses,
-                                mode='lines',
-                                name='val_loss'))
-            fig = fig.update_layout(title=f'Training Loss [Epoch {epoch}]', title_x=0.5, xaxis={'title':f'Epoch {epoch}'}, yaxis={'title':'Loss'})
+                                     mode='lines',
+                                     name='val_loss'))
+            fig = fig.update_layout(title=f'Training Loss [Epoch {epoch}]', title_x=0.5, xaxis={
+                                    'title': f'Epoch {epoch}'}, yaxis={'title': 'Loss'})
             fig.write_image(str(self.plot_save_path / f'{epoch}.png'))
+
 
 class DownsamplePy(TransformerMixin):
     """
     Filter which gets every Nth column from a matrix, starting at a given index.
     """
+
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
         allowed_keys = ["start_index", "step"]
-        self.__dict__.update((k, v) for k, v in kwargs.items() if k in allowed_keys)
-        
+        self.__dict__.update((k, v)
+                             for k, v in kwargs.items() if k in allowed_keys)
+
         if not hasattr(self, "start_index"):
             self.start_index = 0
         if not hasattr(self, "step"):
             self.step = 1
-    
+
     def fit(self, x):
         # self.original_data = x.copy(deep=True)
         # self.original_heads = [float(x) for x in list(x)]
         # self.original_values = x.values
         # self.original_index = x.index.values
-        
-        self.columns = [i for i in range(self.start_index, x.shape[1], self.step)]
+
+        self.columns = [i for i in range(
+            self.start_index, x.shape[1], self.step)]
         self.result = x.iloc[:, self.columns].copy(deep=True)
         return self
 
     def transform(self, df):
-    
+
         return self.result
 
 # ds = DownsamplePy(step=2)
@@ -154,8 +164,6 @@ class DownsamplePy(TransformerMixin):
 # ds.transform(train_spc_df)
 
 # ds.fit_transform(train_spc_df).shape
-
-
 
 
 class SavGol(TransformerMixin):
@@ -203,7 +211,8 @@ class SavGol(TransformerMixin):
         self.__dict__.update(kwargs)
 
         allowed_keys = ["sav_window", "sav_poly", "sav_deriv"]
-        self.__dict__.update((k, v) for k, v in kwargs.items() if k in allowed_keys)
+        self.__dict__.update((k, v)
+                             for k, v in kwargs.items() if k in allowed_keys)
 
         if not hasattr(self, "delta"):
             self.delta = 1
