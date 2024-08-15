@@ -34,7 +34,7 @@ import tensorflow as tf
 # from wai.ma.transformation import SavitzkyGolay2
 # from wai.ma.filter import Downsample
 from pathlib import Path
-from . import utils
+import utils
 print(f'tensorflow version : {tf.version.VERSION}')
 # tf.enable_eager_execution()
 
@@ -52,13 +52,11 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
             models_folder = base_path / chemical / 'std'
             all_models = [x for x in models_folder.glob('**/*.hdf5')]
 
-            #                             data = pd.read_csv(filename, index_col=[0,1])
             data = data
             new_indices = data.index
-            # data.drop(chemical, axis=1, inplace=True)
 
             for model_path in all_models:
-
+                print(model_path)
                 json_path = model_path.parent.parent / 'model.json'
 
                 with open(json_path) as f:
@@ -70,7 +68,6 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
                     input_name = json_['Inputs'][i]['Name']
 #                     print(f'filename: {filename}')
                     train = data.copy(deep=True)
-
                     for j in range(len(json_['Inputs'][i]['Pre-processing'])):
                         key_ = json_['Inputs'][i]['Pre-processing'][j]['Name']
                         if input_name == 'nir2':
@@ -88,6 +85,7 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
                 preds = pd.DataFrame(model(inputs).numpy())
                 preds_comb = pd.concat([preds_comb, preds], axis=1)
             preds_comb = preds_comb.median(axis=1)
+
             preds_comb.index = new_indices
 
             os.makedirs(
