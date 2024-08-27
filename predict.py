@@ -47,6 +47,28 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
         print(f'Starting prediction using model version {model_version}')
         base_path = Path(path_to_model)
         for chemical in chemicals:
+            chems = [
+                'aluminium',
+                'phosphorus',
+                'ph',
+                'exchangeable_acidity',
+                'calcium',
+                'magnesium',
+                'sulphur',
+                'sodium',
+                'iron',
+                'manganese',
+                'boron',
+                'copper',
+                'zinc',
+                'total_nitrogen',
+                'potassium',
+                'ec_salts',
+                'organic_carbon', 'cec',
+                'sand', 'silt', 'clay'
+            ]
+            if chemical not in chems:
+                continue
             print(chemical)
             preds_comb = pd.DataFrame()
             models_folder = base_path / chemical / 'std'
