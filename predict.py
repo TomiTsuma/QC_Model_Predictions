@@ -47,31 +47,32 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
         print(f'Starting prediction using model version {model_version}')
         base_path = Path(path_to_model)
         for chemical in chemicals:
-            chems = [
-                'aluminium',
-                'phosphorus',
-                'ph',
-                'exchangeable_acidity',
-                'calcium',
-                'magnesium',
-                'sulphur',
-                'sodium',
-                'iron',
-                'manganese',
-                'boron',
-                'copper',
-                'zinc',
-                'total_nitrogen',
-                'potassium',
-                'ec_salts',
-                'organic_carbon', 'cec',
-                'sand', 'silt', 'clay'
-            ]
-            if chemical not in chems:
-                continue
+            # chems = [
+            #     'aluminium',
+            #     'phosphorus',
+            #     'ph',
+            #     'exchangeable_acidity',
+            #     'calcium',
+            #     'magnesium',
+            #     'sulphur',
+            #     'sodium',
+            #     'iron',
+            #     'manganese',
+            #     'boron',
+            #     'copper',
+            #     'zinc',
+            #     'total_nitrogen',
+            #     'potassium',
+            #     'ec_salts',
+            #     'organic_carbon', 'cec',
+            #     'sand', 'silt', 'clay'
+            # ]
+            # if chemical not in chems:
+            #     continue
             print(chemical)
             preds_comb = pd.DataFrame()
             models_folder = base_path / chemical / 'std'
+            print(models_folder)
             all_models = [x for x in models_folder.glob('**/*.hdf5')]
 
             data = data
@@ -117,5 +118,3 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
         print(f'Finalizing prediction using model version {model_version}')
 
 
-# predict_chems('dl_models_all_chems_20210414/dl_v2.2_update_2022',
-#               '../DSML87/outputFiles/preds', ['total_nitrogen', 'clay'], ['DLv2.2'], pd.read_csv('../outputFiles/spectraldata.csv'))
