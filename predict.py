@@ -39,6 +39,8 @@ print(f'tensorflow version : {tf.version.VERSION}')
 # tf.enable_eager_execution()
 
 # ClassifierKwargs = ClassifierKwargs()
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def predict_chems(path_to_model, predction_folder_path, chemicals, model_versions, data):
@@ -76,6 +78,8 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
             all_models = [x for x in models_folder.glob('**/*.hdf5')]
 
             data = data
+            if os.getenv("SENSOR_ID") == "2" and os.getenv("SAMPLE_TYPE_ID") == "2" and os.getenv("SAMPLE_PRETREATMENT_ID") == "3" and chemical not in ['total_nitrogen','total_carbon']:
+                data = data.apply(lambda row: (row - np.mean(row)) / np.std(row, ddof=1), axis=1)
             new_indices = data.index
 
             for model_path in all_models:
