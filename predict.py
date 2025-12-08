@@ -43,22 +43,32 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def predict_chems(path_to_model, predction_folder_path, chemicals, model_versions, data):
+def predict_chems(path_to_model, predction_folder_path, chemicals, model_versions, data_spc,path_to_splits=None):
+    # data_spc = pd.read_csv(os.path.join(path_to_spectra, "spc/spc.csv"), index_col=0, engine='c') 
+   
     for model_version in model_versions:
+        if (model_version not in [str(x) for x in os.listdir(path_to_model)]):
+            continue
 
         print(f'Starting prediction using model version {model_version}')
         base_path = Path(path_to_model)
+        print(f"This is the path to model {path_to_model}")
         for chemical in chemicals:
+            data = data_spc.copy(deep=True)
             print(chemical)
+            # print("Making predictions for these number of spectra: ",(data.head()))
             preds_comb = pd.DataFrame()
-            models_folder = base_path / chemical / 'std'
-            print(models_folder)
+            models_folder = base_path / model_version / chemical / 'std'
+            # print(f"This is the model path {models_folder}")
             all_models = [x for x in models_folder.glob('**/*.hdf5')]
-
+            # print(f"These are the models {all_models}")
+            if len(all_models) == 0:
+                raise("Models for chemical {} not found".format(chemical))
+            #                             data = pd.read_csv(filename, index_col=[0,1])
             data = data
-            # if os.getenv("SENSOR_ID") == "2" and os.getenv("SAMPLE_TYPE_ID") == "2" and os.getenv("SAMPLE_PRETREATMENT_ID") == "3" and chemical not in ['total_nitrogen','total_carbon']:
-            #     data = data.apply(lambda row: (row - np.mean(row)) / np.std(row, ddof=1), axis=1)
             new_indices = data.index
+            # data.drop(chemical, axis=1, inplace=True)
+
 
             for model_path in all_models:
 
@@ -70,22 +80,36 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
                 inputs = []
 
                 for i in range(len(json_['Inputs'])):
+
                     input_name = json_['Inputs'][i]['Name']
+                    # print(f"Input name: {input_name}")
+#                     print(f'filename: {filename}')
                     train = data.copy(deep=True)
                     is_epo_present = False
                     for j in range(len(json_['Inputs'][i]['Pre-processing'])):
                         
                         key_ = json_['Inputs'][i]['Pre-processing'][j]['Name']
-                        
+                        # print("------------------------------.",key_)
+                        # print(j)
                         if key_ == "EPO":
                             is_epo_present = True
                             train = train.sub(train.mean(axis=1), axis=0).div(train.std(axis=1), axis=0)
                             epo_matrix = pd.read_csv(os.path.join(path_to_model, model_version, "epo_matrix.csv"),index_col=0)
                             train = np.dot(train.values, epo_matrix.values)
+                            # print(np.shape(train))
+                            
+                            train = pd.DataFrame(train)
+                            # print(train.shape)
+                            continue
+                        if key_ == "StandardNormal":
+                            # print("Doing StandardNormal")
+                            is_epo_present = True
+                            train = train.sub(train.mean(axis=1), axis=0).div(train.std(axis=1), axis=0)
                             
                             train = pd.DataFrame(train)
                             continue
 
+                        # print(is_epo_present)
                         if input_name == 'nir2':
                             input_name = 'nir.2'
                         if is_epo_present == False:
@@ -95,38 +119,42 @@ def predict_chems(path_to_model, predction_folder_path, chemicals, model_version
                         else:
                             position = j-1
 
+                            # print("This is the pos: ",position)
                             pickle_path = model_path.parent / 'preprocess' / \
                                 f'input.{input_name}.{position}.{key_}.pickle'
                         pickle_ = joblib.load(pickle_path)
                         train = pickle_.fit_transform(train)
-
+                        # print(np.shape(train))
+                    # print("Train values to be used: ",pd.DataFrame(train).head())
                     inputs.append(train.values)
 
                 tf.keras.backend.clear_session()
                 model = tf.keras.models.load_model(model_path, compile=False)
                 preds = pd.DataFrame(model(inputs).numpy())
+                # print("There are the predictions for the chemical {}: {}".format(chemical, preds.head()))
                 preds_comb = pd.concat([preds_comb, preds], axis=1)
 
             preds_comb = preds_comb.median(axis=1)
-
+            # print("There are the predictions for the chemical {}: {}".format(chemical, preds_comb))
             preds_comb.index = new_indices
-
+            preds_comb = preds_comb.dropna()
             os.makedirs(
-                f'{predction_folder_path}/{model_version}', exist_ok=True)
+                f'{predction_folder_path}', exist_ok=True)
+            print(f"Predictions for {chemical}: {preds_comb.shape}" )
             preds_comb.to_csv(
-                f'{predction_folder_path}/{model_version}/{chemical}_preds.csv')
+                f'{predction_folder_path}/{chemical}_{model_version}_preds.csv')
         print(f'Finalizing prediction using model version {model_version}')
 
 
-predict(
-    chemicals=["ph","sodium"],
-    data=pd.read_csv(f"/home/tom/DSML125/MSSC_DVC/spc/spc.csv",index_col=0, engine="c"),
-    predction_folder_path=f"/home/tom/DSML125/outputFiles/predictions",
-    model_versions=["v1.0"],
-    path_to_model=f"/home/tom/DSML125/QC_Model_Predictions/soil-alpha-atr-epo-fritsch-2mm/v1.0",
-    output_path=f"/home/tom/DSML125/outputFiles/evaluation",
-    project_name= project_name, 
-    path_to_splits=f"/home/tom/DSML125/MSSC_DVC/{data_item}",
+# predict(
+#     chemicals=["ph","sodium"],
+#     data=pd.read_csv(f"/home/tom/DSML125/MSSC_DVC/spc/spc.csv",index_col=0, engine="c"),
+#     predction_folder_path=f"/home/tom/DSML125/outputFiles/predictions",
+#     model_versions=["v1.0"],
+#     path_to_model=f"/home/tom/DSML125/QC_Model_Predictions/soil-alpha-atr-epo-fritsch-2mm/v1.0",
+#     output_path=f"/home/tom/DSML125/outputFiles/evaluation",
+#     project_name= project_name, 
+#     path_to_splits=f"/home/tom/DSML125/MSSC_DVC/{data_item}",
 
-    data_version = data_item
-)
+#     data_version = data_item
+# )
